@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RPG TEAM Messenger</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c1220;color:white;font-family:Arial}
+header{padding:20px;background:#18243a;text-align:center}
+header h1{color:#42caff;margin:0}
+nav{display:flex;gap:6px;padding:10px;background:#141e30}
+nav button{flex:1}
+button{border:0;border-radius:8px;padding:11px;background:#168dcc;color:white;font-weight:bold}
+input{padding:13px;border:0;border-radius:8px;background:#26344b;color:white;width:100%}
+.panel{padding:15px}
+.hidden{display:none}
+.card{background:#19263b;padding:14px;border-radius:12px;margin:10px 0}
+#messages{height:48vh;overflow:auto}
+.msg{background:#26364e;padding:12px;border-radius:10px;margin:9px 0;overflow-wrap:anywhere}
+.name{color:#42caff;font-weight:bold}
+small{color:#9aaec8}
+footer{display:flex;gap:7px;margin-top:10px}
+footer input{flex:1;min-width:0}
+#warning{color:#ff7777}
+</style>
+</head>
+<body>
+
+<header>
+<h1>⚔ RPG TEAM ⚔</h1>
+<small>MESSENGER PRO</small>
+</header>
+
+<section id="login" class="panel">
+<div class="card">
+<h2>Вход в RPG TEAM</h2>
+<input id="username" placeholder="Твоё имя">
+<br><br>
+<button onclick="login()">ВОЙТИ</button>
+<p><small>Первый вошедший становится лидером на этом устройстве.</small></p>
+</div>
+</section>
+
+<main id="app" class="hidden">
+<nav>
+<button onclick="page('chat')">Чат</button>
+<button onclick="page('members')">Участники</button>
+<button onclick="page('rules')">Правила</button>
+<button onclick="page('admin')">Лидер</button>
+</nav>
+
+<section id="chat" class="panel">
+<h2>💬 Общий чат</h2>
+<div id="messages"></div>
+<p id="warning"></p>
+<footer>
+<input id="message" placeholder="Сообщение...">
+<button onclick="send()">➤</button>
+</footer>
+</section>
+
+<section id="members" class="panel hidden">
+<h2>👥 Участники</h2>
+<div id="memberList" class="card"></div>
+</section>
+
+<section id="rules" class="panel hidden">
+<h2>📜 Правила RPG TEAM</h2>
+<div class="card">
+<p>✅ Обычный мат разрешён.</p>
+<p>❌ Оскорблять маму запрещено.</p>
+<p>❌ Спамить запрещено.</p>
+<p>🤝 Уважай участников команды.</p>
+</div>
+</section>
+
+<section id="admin" class="panel hidden">
+<h2>👑 Панель лидера</h2>
+<div class="card">
+<p id="role"></p>
+<input id="announcement" placeholder="Объявление для команды">
+<br><br>
+<button onclick="announce()">Опубликовать</button>
+</div>
+</section>
+</main>
+
+<script>
+let user="";
+let users=[];
+let warnings={};
+let leader="";
+
+function login(){
+ const name=document.getElementById("username").value.trim();
+ if(!name)return alert("Введи имя!");
+ user=name;
+ if(!leader)leader=name;
+ if(!users.includes(name))users.push(name);
+ document.getElementById("login").classList.add("hidden");
+ document.getElementById("app").classList.remove("hidden");
+ document.getElementById("role").textContent=
+ user===leader?"Ты лидер команды 👑":"Ты участник команды";
+ renderMembers();
+}
+
+function page(id){
+ document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
+}
+
+function isMomInsult(message){
+ const text=message.toLowerCase().replace(/ё/g,"е");
+ const patterns=[
+  /твою?\s+мать/,
+  /твоей?\s+маме/,
+  /твоя\s+мать/,
+  /мать\s+твою/,
+  /мам[аыуе]\s+твою/,
+  /мам[аыуе].{0,20}(дура|тупая|идиот)/,
+  /(дура|тупая|идиот).{0,20}мам[аыуе]/
+ ];
+ return patterns.some(p=>p.test(text));
+}
+
+function send(){
+ const input=document.getElementById("message");
+ const value=input.value.trim();
+ const warning=document.getElementById("warning");
+ if(!value)return;
+
+ if(isMomInsult(value)){
+  warnings[user]=(warnings[user]||0)+1;
+  warning.textContent="⛔ Оскорбление мамы запрещено! Предупреждение "+warnings[user];
+  input.value="";
+  return;
+ }
+
+ warning.textContent="";
+ addMessage(user,value);
+ input.value="";
+}
+
+function addMessage(name,value){
+ const box=document.createElement("div");
+ box.className="msg";
+ const author=document.createElement("div");
+ author.className="name";
+ author.textContent=name+(name===leader?" 👑":"");
+ const content=document.createElement("div");
+ content.textContent=value;
+ box.append(author,content);
+ document.getElementById("messages").append(box);
+ box.scrollIntoView();
+}
+
+function renderMembers(){
+ document.getElementById("memberList").textContent=
+ users.map(u=>u+(u===leader?" — Лидер 👑":" — Участник")).join("\n");
+ document.getElementById("memberList").style.whiteSpace="pre-line";
+}
+
+function announce(){
+ if(user!==leader)return alert("Только лидер может публиковать объявления!");
+ const text=document.getElementById("announcement").value.trim();
+ if(!text)return;
+ addMessage("📢 ОБЪЯВЛЕНИЕ ЛИДЕРА",text);
+ page("chat");
+ document.getElementById("announcement").value="";
+}
+</script>
+</body>
+</html>
